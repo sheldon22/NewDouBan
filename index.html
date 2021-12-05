@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!--moblie patten-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title>github things</title>
+</head>
+<body>
+    <main>
+        <section></section>
+        <section>
+            <div class='search-area'>
+                <input type="text" placeholder="search movies" id='input'> 
+                <span class='btn'>Search</span>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div id='change'>top 250</div>
+        <div id='change'>search</div>
+    </footer>
+
+<style>
+    *{
+        margin:0;
+        padding:0;
+    }
+    html,body,main{
+        height: 100%;
+        position: relative;
+    }
+    body{
+        font-size: 12px;
+        line-height: 1.2;
+        background-color: #fff; 
+    }
+    main{
+        height: calc(100% - 50px);
+        overflow:scroll;
+    }
+    section{
+        display: none;
+    }
+    section:first-child{
+        display: block;
+    }
+    .wrapper{
+        display: flex;
+        padding:20px;
+        border-bottom: 1px solid #999;
+    }
+    img{
+        width: 180px;
+    }
+    .info{
+        margin: 0px 10px;
+        line-height: 1.5;
+        width:50%;
+        color:#333;
+    }
+    .info > h2{
+        padding-bottom:10px; 
+    }
+    .info > div{
+        padding-bottom:10px;
+    }
+    .score{
+        font-weight: bold;
+    }
+    .btn{
+        position: absolute;
+        right: 0;
+        padding: 8px 10px;
+        background: #FF5722;
+        color: #fff;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    .search-area{
+        color: #333;
+        padding-bottom: 10px;
+        margin: 20px;
+        position: relative;
+    }
+    .search-area input {
+        width: calc(100% - 50px);
+        padding: 8px;
+        background-color: #eee;
+        border: none;
+        border-radius: 2px;
+        box-shadow: none;
+        outline: none;
+    }
+    footer{
+        position: absolute;
+        bottom:0;
+        height: 50px;
+        width: 100%;
+        border-top: 1px solid #333;
+        background-color: #fff;
+        display: flex;
+        align-items: center;  
+    }
+    footer div{
+        flex:1;
+        text-align: center;
+    }
+    .active{
+        color: rgb(0, 110, 255);
+        font-weight: bold;
+        font-size: larger;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script>
+    // 实现点击切换
+    $("footer>div").click(function(){
+        var index = $(this).index()
+        $('section').hide().eq(index).fadeIn()
+        $(this).addClass('active').siblings().removeClass('active')
+    })
+
+    var index = 0                       // 页数从0开始
+    function getData(){
+        // 获取原始数据
+        $.ajax({
+            url:'https://api.wmdb.tv/api/v1/top?type=Imdb&lang=Cn',
+            type:'GET',
+            data:{
+                skip:index,             // 页数
+                limit:20,               // 数据量
+            },
+            dataType:'json'
+        })
+        // 如果成功获取到数据，则取出原数据中我们需要的数据
+        .done(function(ret){     
+            setData(ret)                // 执行该函数，设置数据
+            index+=20                   // 页面到底部时，加载后20条数据
+            // console.log(ret)
+        })
+        // 如失败则打印出对应内容
+        .fail(function(){     
+            console.log('error...')
+        })
+    }
+    
+    getData()                           // 执行该函数，获取数据
+
+    // 判断页面是否到底部
+    $('main').scroll(function(){
+        if(
+            $('section').eq(0).height() == $('main').scrollTop() + $('main').height()
+        ){
+            getData()
+        }
+    })
+
+
+    // 设置数据
+    function setData(data){
+        data.forEach(function(movie){
+            var tpl = `
+            <div class='wrapper'>
+                <img src="https://image.querydata.org/movie/poster/1603701754760-c50d8a.jpg" alt="">
+                <div class='info'>
+                    <h2 class='name'>肖申克的救赎</h2>
+                    <div class='score'>
+                        豆瓣评分：<div class='doubanRating'>9.4</div>
+                        IMDB评分：<div class='imdbRating'>9.5</div>
+                        烂番茄指数：<div class='rottenRating'>95%</div>  
+                    </div>
+                    类型：<div class='genre'>犯罪/剧情</div>
+                    上映时间：<div class='year'>1994-09-10</div>
+                    <p class='desc'>20世纪40年代末，小有成就的青年银行家安迪（蒂姆·罗宾斯 Tim Robbins 饰）因涉嫌杀害妻子及她的情人而锒铛入狱。在这座名为鲨堡的监狱内，希望似乎虚无缥缈，终身监禁的惩罚无疑注定了安迪接下来...</p>    
+                </div>
+            </div>  
+            `
+            var $node = $(tpl)
+            $node.find('.year').text(movie.year)
+            $node.find('.imdbRating').text(movie.imdbRating)
+            $node.find('.doubanRating').text(movie.doubanRating)
+            $node.find('.rottenRating').text(movie.rottenRating)
+            $node.find('.name').text(movie.data[0].name)
+            $node.find('.genre').text(movie.data[0].genre)
+            $node.find('.desc').text(movie.data[0].description)
+            $node.find('img').attr('src',movie.data[0].poster)
+            $('section').eq(0).append($node)
+        })
+    }
+
+    
+    // 搜索框
+    $(".btn").click(function(){
+        // 获取按钮的值
+        var value = document.getElementById("input").value
+        // 获取搜索数据
+        function getSearchData(){
+            $.ajax({
+                url:'https://api.wmdb.tv/api/v1/movie/search',
+                type:'GET',
+                data:{
+                    q: value
+                },
+                dataType:'json'
+            })
+            // 如果成功获取到数据，则取出原数据中我们需要的数据
+            .done(function(ret){     
+                setSearchData(ret)                // 执行该函数，设置数据
+                // console.log(ret)
+            })
+            // 如失败则打印出对应内容
+            .fail(function(){     
+                console.log('error...')
+            })
+        } 
+      getSearchData()  
+    })
+
+    function setSearchData(data){
+        data.forEach(function(movie){
+            var tpl = `
+            <div class='wrapper'>
+                <img src="https://image.querydata.org/movie/poster/1603701754760-c50d8a.jpg" alt="">
+                <div class='info'>
+                    <h2 class='name'>肖申克的救赎</h2>
+                    <div class='score'>
+                        豆瓣评分：<div class='doubanRating'>9.4</div>
+                        IMDB评分：<div class='imdbRating'>9.5</div>
+                        烂番茄指数：<div class='rottenRating'>95%</div>  
+                    </div>
+                    类型：<div class='genre'>犯罪/剧情</div>
+                    上映时间：<div class='year'>1994-09-10</div>
+                    <p class='desc'>20世纪40年代末，小有成就的青年银行家安迪（蒂姆·罗宾斯 Tim Robbins 饰）因涉嫌杀害妻子及她的情人而锒铛入狱。在这座名为鲨堡的监狱内，希望似乎虚无缥缈，终身监禁的惩罚无疑注定了安迪接下来...</p>    
+                </div>
+            </div>  
+            `
+            var $node = $(tpl)
+            $node.find('.year').text(movie.year)
+            $node.find('.imdbRating').text(movie.imdbRating)
+            $node.find('.doubanRating').text(movie.doubanRating)
+            $node.find('.rottenRating').text(movie.rottenRating)
+            $node.find('.name').text(movie.data[0].name)
+            $node.find('.genre').text(movie.data[0].genre)
+            $node.find('.desc').text(movie.data[0].description)
+            $node.find('img').attr('src',movie.data[0].poster)
+            $('section').eq(1).append($node)
+        })
+    }
+
+    
+    
+</script>
+</body>
+</html>
